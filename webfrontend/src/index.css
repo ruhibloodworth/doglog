@@ -1,0 +1,10 @@
+@import "open-props/style";
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: var(--font-sans);
+  background-color: var(--gray-1);
+}
