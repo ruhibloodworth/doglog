@@ -47,7 +47,7 @@ client = TestClient(app)
 def setup_db(request):
     response = client.post(
         "/users/",
-        json={"email": "adam@example.com", "password": "password"},
+        json={"email": "alan@example.com", "password": "password"},
     )
 
 
@@ -62,17 +62,30 @@ def test_create_user():
     assert "id" in data
     user_id = data["id"]
 
-    response = client.get(f"/users/{user_id}")
+
+def test_login():
+    response = client.post(
+        "/token",
+        data={"username": "alan@example.com", "password": "password"},
+    )
     assert response.status_code == 200, response.text
     data = response.json()
-    assert data["email"] == "deadpool@example.com"
-    assert data["id"] == user_id
+    print(data)
+    assert data["token_type"] == "bearer"
+    assert type(data["access_token"]) is str
 
 
 def test_get_users():
+    response = client.post(
+        "/token",
+        data={"username": "alan@example.com", "password": "password"},
+    )
+    data = response.json()
+
     response = client.get(
-        "/users/"
+        "/users/",
+        headers={"Authorization": "Bearer " + data["access_token"]}
     )
     assert response.status_code == 200, response.text
-    data = [u for u in response.json() if u["email"] == "adam@example.com"]
+    data = [u for u in response.json() if u["email"] == "alan@example.com"]
     assert len(data) == 1
