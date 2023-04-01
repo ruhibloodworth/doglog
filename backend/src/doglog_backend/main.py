@@ -4,14 +4,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
+from starlette.config import Config
+from starlette.datastructures import Secret
 from typing import Annotated
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 
+config = Config(".env")
+
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 ALGORITHM = "HS256"
-SECRET_KEY = "c741312966b3bb02d7135059cb8728b764e090ba06d418c1a147190dcdb116f0"
+SECRET_KEY = config('SECRET_KEY', cast=Secret)
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -55,7 +59,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, str(SECRET_KEY), algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -66,7 +70,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Annotate
         headers={"WWW-Authenticate": "Bearer"},
     )    
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, str(SECRET_KEY), algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
